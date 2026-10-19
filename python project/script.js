@@ -61,18 +61,20 @@ fileInput.addEventListener('change', () => {
 resetBtn.addEventListener('click', () => {
   results.classList.add('hidden');
   errorMsg.textContent = '';
+  scanState.classList.add('hidden');
   idleState.classList.remove('hidden');
   fileInput.value = '';
+  stopScanStatusLoop();
 });
 
 function handleFile(file) {
   errorMsg.textContent = '';
-    if (!file.name.toLowerCase().endsWith('.pdf'))
-  {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
     errorMsg.textContent = 'Please choose a .pdf file.';
     return;
   }
 
+  stopScanStatusLoop();
   idleState.classList.add('hidden');
   results.classList.add('hidden');
   scanState.classList.remove('hidden');
@@ -83,7 +85,14 @@ function handleFile(file) {
 
   fetch('/convert', { method: 'POST', body: formData })
     .then(async (res) => {
-      const data = await res.json();
+      const contentType = res.headers.get('content-type') || '';
+      let data = null;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const message = await res.text();
+        throw new Error(message || 'Something went wrong.');
+      }
       if (!res.ok) throw new Error(data.error || 'Something went wrong.');
       return data;
     })
