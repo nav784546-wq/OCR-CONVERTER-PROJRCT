@@ -209,46 +209,35 @@ h1 span { color: var(--teal); }
   color: var(--text-muted);
 }
 
-.terminal {
-  background: #0E1116;
-  border: 1px solid var(--panel-line);
-  border-radius: 4px;
-  overflow: hidden;
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
   margin-bottom: 24px;
 }
 
-.terminal-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 14px;
+.image-card {
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
   background: var(--panel);
-  border-bottom: 1px solid var(--panel-line);
+  border: 1px solid var(--panel-line);
+  border-radius: 4px;
 }
 
-.dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: var(--panel-line);
+.image-card img {
+  display: block;
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  background: #0E1116;
 }
 
-.terminal-title {
+.image-card figcaption {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text-muted);
-  margin-left: 8px;
-}
-
-.terminal-body {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  line-height: 1.7;
-  color: var(--text);
-  padding: 18px;
-  margin: 0;
-  max-height: 260px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
+  padding-top: 8px;
 }
 
 .downloads {

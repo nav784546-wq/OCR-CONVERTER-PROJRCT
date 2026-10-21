@@ -1,5 +1,5 @@
 """
-Flask web app for the PDF -> OCR converter.
+Flask web app for the PDF-to-image converter.
 
 Run with:  python app.py
 Then open: http://127.0.0.1:5000
@@ -116,11 +116,12 @@ def convert():
     source_filename = get_display_name(file.filename)
 
     try:
-        txt_path, pdf_out_path, page_count, word_counts, text = ocr_core.convert(
+        image_filenames, zip_path, pdf_out_path, page_count = ocr_core.convert(
             pdf_path, job_result_dir
         )
     except Exception as e:
-        return jsonify({"error": f"OCR processing failed: {e}"}), 500
+        app.logger.exception("Could not convert PDF pages to images")
+        return jsonify({"error": f"Image conversion failed: {e}"}), 500
 
     try:
         with open(pdf_path, "rb") as uploaded_pdf_file:
@@ -131,11 +132,11 @@ def convert():
     except RuntimeError as e:
         return jsonify({"error": str(e)}), 500
     except psycopg.Error:
-        app.logger.exception("Could not save OCR documents to PostgreSQL")
+        app.logger.exception("Could not save converted documents to PostgreSQL")
         return jsonify(
             {
                 "error": (
-                    "Could not save the OCR documents to PostgreSQL. "
+                    "Could not save the converted documents to PostgreSQL. "
                     "Check the database configuration and server log."
                 )
             }
@@ -145,10 +146,8 @@ def convert():
         {
             "job_id": job_id,
             "page_count": page_count,
-            "word_counts": word_counts,
-            "total_words": sum(word_counts),
-            "preview": text[:2000],
-            "txt_filename": os.path.basename(txt_path),
+            "image_filenames": image_filenames,
+            "zip_filename": os.path.basename(zip_path),
             "pdf_filename": os.path.basename(pdf_out_path),
             "source_filename": source_filename,
         }

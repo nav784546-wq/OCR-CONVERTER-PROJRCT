@@ -1,32 +1,15 @@
-"""
-Core OCR pipeline — same logic as the original CLI script, refactored
-into importable functions so the Flask web app can call it directly.
-
-PIPELINE:
-  PDF page --> image (pdf2image + poppler)
-            --> plain-text OCR (pytesseract)
-            --> plain text (.txt)
-            --> page images assembled into a scanned PDF (reportlab)
-"""
+"""Convert PDF pages to PNG images and an image-only PDF."""
 
 import os
 import platform
 import shutil
+import zipfile
 
 from pdf2image import convert_from_path
-import pytesseract
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
-WINDOWS_TESSERACT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 WINDOWS_POPPLER_PATH = r"C:\poppler\Library\bin"
-COMMON_TESSERACT_PATHS = [
-    WINDOWS_TESSERACT_PATH,
-    "/usr/local/bin/tesseract",
-    "/usr/bin/tesseract",
-    "/opt/homebrew/bin/tesseract",
-    "/opt/local/bin/tesseract",
-]
 COMMON_POPPLER_PATHS = [
     WINDOWS_POPPLER_PATH,
     "/usr/local/bin",
@@ -47,25 +30,9 @@ def find_windows_poppler_path():
     return WINDOWS_POPPLER_PATH
 
 
-def find_executable(candidate_paths):
-    for path in candidate_paths:
-        if not path:
-            continue
-        if os.path.isfile(path) and os.access(path, os.X_OK):
-            return path
-    return shutil.which(os.path.basename(candidate_paths[0])) if candidate_paths else None
-
-
-def configure_ocr_paths():
-    """Detect usable OCR dependencies across OS install layouts."""
+def configure_poppler_path():
+    """Detect Poppler's location across OS install layouts."""
     global POPPLER_PATH
-
-    tesseract_path = shutil.which("tesseract")
-    if tesseract_path is None:
-        tesseract_path = find_executable(COMMON_TESSERACT_PATHS)
-
-    if tesseract_path:
-        pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
     if platform.system() == "Windows":
         POPPLER_PATH = find_windows_poppler_path()
@@ -84,7 +51,7 @@ def configure_ocr_paths():
         POPPLER_PATH = os.path.dirname(poppler_path)
 
 
-configure_ocr_paths()
+configure_poppler_path()
 
 
 def pdf_to_images(pdf_path, dpi=300):
@@ -94,22 +61,7 @@ def pdf_to_images(pdf_path, dpi=300):
             "Poppler utilities (pdftoppm/pdfinfo) were not found. "
             "Install Poppler or add its bin folder to PATH."
         )
-    if shutil.which("tesseract") is None and not pytesseract.pytesseract.tesseract_cmd:
-        raise RuntimeError(
-            "Tesseract OCR was not found. Install Tesseract OCR or add it to PATH."
-        )
     return convert_from_path(pdf_path, dpi=dpi, poppler_path=POPPLER_PATH)
-
-
-def extract_plain_text(images):
-    """Run OCR and return text and word counts for each page."""
-    full_text = []
-    page_word_counts = []
-    for i, img in enumerate(images, start=1):
-        text = pytesseract.image_to_string(img)
-        full_text.append(f"--- Page {i} ---\n{text.strip()}\n")
-        page_word_counts.append(len(text.split()))
-    return "\n".join(full_text), page_word_counts
 
 
 def build_scanned_pdf(images, output_path):
@@ -123,19 +75,30 @@ def build_scanned_pdf(images, output_path):
     c.save()
 
 
+def save_page_images(images, output_dir, base_name):
+    """Save each rendered page as a PNG and package the images into a ZIP."""
+    image_filenames = []
+    zip_path = os.path.join(output_dir, f"{base_name}_images.zip")
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for page_number, image in enumerate(images, start=1):
+            filename = f"{base_name}_page_{page_number:03}.png"
+            image_path = os.path.join(output_dir, filename)
+            image.save(image_path, format="PNG")
+            archive.write(image_path, arcname=filename)
+            image_filenames.append(filename)
+    return image_filenames, zip_path
+
+
 def convert(pdf_path, output_dir):
-    """Run the full pipeline on one PDF file. Returns (txt_path, pdf_path, page_count, word_counts)."""
+    """Convert a PDF into per-page PNG images and an image-only PDF."""
     os.makedirs(output_dir, exist_ok=True)
     base_name = os.path.splitext(os.path.basename(pdf_path))[0]
-
     images = pdf_to_images(pdf_path)
-
-    text, word_counts = extract_plain_text(images)
-    txt_path = os.path.join(output_dir, f"{base_name}_ocr.txt")
-    with open(txt_path, "w", encoding="utf-8") as f:
-        f.write(text)
-
-    pdf_out_path = os.path.join(output_dir, f"{base_name}_scanned.pdf")
-    build_scanned_pdf(images, pdf_out_path)
-
-    return txt_path, pdf_out_path, len(images), word_counts, text
+    try:
+        image_filenames, zip_path = save_page_images(images, output_dir, base_name)
+        pdf_out_path = os.path.join(output_dir, f"{base_name}_scanned.pdf")
+        build_scanned_pdf(images, pdf_out_path)
+        return image_filenames, zip_path, pdf_out_path, len(images)
+    finally:
+        for image in images:
+            image.close()

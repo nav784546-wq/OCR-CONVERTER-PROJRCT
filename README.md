@@ -1,28 +1,27 @@
-# Local PDF OCR Scanner
+# Local PDF-to-Image Converter
 
-A local Flask app that extracts text from scanned PDFs with Tesseract. It
-provides a plain-text preview and download, plus an image-only PDF download
-without an OCR text layer.
+A local Flask app that converts each page of a PDF into a high-resolution PNG.
+Preview the images in the browser, download them together as a ZIP, or download
+an image-only PDF.
 
 ## Requirements
 
 - Python 3.10 or newer
-- Tesseract OCR
 - Poppler command-line tools (`pdfinfo` / `pdftoppm`)
 
-The app auto-detects common install locations for Tesseract and Poppler on
-Windows, macOS, and Linux. If you install either tool in a non-standard path,
-add the folder to your `PATH` or update the explicit paths in `ocr_core.py`.
+The app auto-detects common Poppler install locations on Windows, macOS, and
+Linux. If Poppler is installed in a non-standard path, add it to your `PATH` or
+update the explicit paths in `ocr_core.py`.
 
 ### Linux / macOS install examples
 
 ```bash
 # Ubuntu / Debian
 sudo apt-get update
-sudo apt-get install -y tesseract-ocr poppler-utils
+sudo apt-get install -y poppler-utils
 
 # macOS (Homebrew)
-brew install tesseract poppler
+brew install poppler
 ```
 
 ## Run locally
@@ -45,21 +44,22 @@ creates the table automatically on the first successful conversion.
 
 ### Current Codespace
 
-PostgreSQL is installed locally in this Codespace. If it has stopped, start it
-with `sudo service postgresql start`. Use these settings for the SQLTools
-connection:
+PostgreSQL is installed locally in this Codespace. Run these commands to start
+PostgreSQL, create the database if needed, and launch the app:
 
+```bash
+sudo service postgresql start
+createdb ocr_converter   # skip if it already exists
+cd "/workspaces/OCR-CONVERTER-PROJRCT/python project"
+DATABASE_URL="postgresql://codespace@localhost:5432/ocr_converter" .venv/bin/python app.py
+```
+
+Use these settings for the SQLTools connection:
 - Host: `localhost`
 - Port: `5432`
 - Database: `ocr_converter`
 - User: `codespace`
 - Password: leave blank
-
-Start the app from the `python project` directory with:
-
-```bash
-DATABASE_URL="postgresql://codespace@localhost:5432/ocr_converter" .venv/bin/python app.py
-```
 
 Password-free access is restricted to this database and loopback connections
 for local development in this Codespace. Do not use this authentication setup

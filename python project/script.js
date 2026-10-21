@@ -8,19 +8,15 @@ const results = document.getElementById('results');
 const resetBtn = document.getElementById('resetBtn');
 
 const statPages = document.getElementById('statPages');
-const statWords = document.getElementById('statWords');
 const statFile = document.getElementById('statFile');
-const previewText = document.getElementById('previewText');
-const downloadTxt = document.getElementById('downloadTxt');
+const imageGrid = document.getElementById('imageGrid');
+const downloadImages = document.getElementById('downloadImages');
 const downloadPdf = document.getElementById('downloadPdf');
 
-// Rotate status lines while we wait for the server, purely cosmetic —
-// gives feedback during what can be a several-second OCR job.
 const statusLines = [
-  'Reading document…',
-  'Locating word positions…',
-  'Recognizing text…',
-  'Creating image-only PDF…',
+  'Rendering PDF pages…',
+  'Saving page images…',
+  'Preparing image download…',
   'Almost done…',
 ];
 let statusInterval = null;
@@ -61,6 +57,7 @@ fileInput.addEventListener('change', () => {
 resetBtn.addEventListener('click', () => {
   results.classList.add('hidden');
   errorMsg.textContent = '';
+  imageGrid.replaceChildren();
   scanState.classList.add('hidden');
   idleState.classList.remove('hidden');
   fileInput.value = '';
@@ -110,12 +107,24 @@ function showResults(data) {
   idleState.classList.remove('hidden');
 
   statPages.textContent = data.page_count;
-  statWords.textContent = data.total_words;
   statFile.textContent = data.source_filename || '—';
-  previewText.textContent = data.preview || '(No text detected)';
 
-  downloadTxt.href = `/download/${data.job_id}/${data.txt_filename}`;
-  downloadPdf.href = `/download/${data.job_id}/${data.pdf_filename}`;
+  imageGrid.replaceChildren();
+  data.image_filenames.forEach((filename, index) => {
+    const card = document.createElement('figure');
+    card.className = 'image-card';
+    const image = document.createElement('img');
+    image.src = `/download/${data.job_id}/${encodeURIComponent(filename)}`;
+    image.alt = `Converted page ${index + 1}`;
+    image.loading = 'lazy';
+    const caption = document.createElement('figcaption');
+    caption.textContent = `Page ${index + 1}`;
+    card.append(image, caption);
+    imageGrid.append(card);
+  });
+
+  downloadImages.href = `/download/${data.job_id}/${encodeURIComponent(data.zip_filename)}`;
+  downloadPdf.href = `/download/${data.job_id}/${encodeURIComponent(data.pdf_filename)}`;
 
   results.classList.remove('hidden');
   results.scrollIntoView({ behavior: 'smooth', block: 'start' });

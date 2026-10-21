@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PDF → OCR / Document Scanner</title>
+<title>PDF to Image Converter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -15,12 +15,11 @@
 <main class="page">
 
   <header class="hero">
-    <p class="eyebrow">DOCUMENT&nbsp;SCANNER&nbsp;/&nbsp;LOCAL</p>
-    <h1>Extract text from<br><span>scanned pages.</span></h1>
+    <p class="eyebrow">PDF&nbsp;IMAGE&nbsp;CONVERTER&nbsp;/&nbsp;LOCAL</p>
+    <h1>Turn PDF pages into<br><span>clear images.</span></h1>
     <p class="subhead">
-      Drop in a PDF to extract its text with Tesseract. Download the
-      extracted text separately, or keep a copy of the scanned pages
-      without an added text layer.
+      Drop in a PDF to convert every page into a high-resolution PNG.
+      Preview the images, download them together, or keep an image-only PDF.
     </p>
   </header>
 
@@ -39,7 +38,7 @@
         <line x1="10" y1="38" x2="22" y2="38" stroke="currentColor" stroke-width="1.5"/>
       </svg>
       <p class="bed-label">Drop PDF here, or <span class="link-text">browse files</span></p>
-      <p class="bed-sublabel">.PDF · up to 100MB</p>
+      <p class="bed-sublabel">.PDF · up to 25MB</p>
       <input type="file" id="fileInput" accept="application/pdf,.pdf" hidden />
     </div>
 
@@ -48,7 +47,7 @@
         <div class="page-icon"></div>
         <div class="sweep-line"></div>
       </div>
-      <p class="scan-status" id="scanStatus">Reading document&hellip;</p>
+      <p class="scan-status" id="scanStatus">Converting PDF pages&hellip;</p>
     </div>
   </section>
 
@@ -62,7 +61,7 @@
       </div>
       <div class="stat">
         <span class="stat-value" id="statWords">0</span>
-        <span class="stat-label">WORDS FOUND</span>
+        <span class="stat-label">PNG IMAGES</span>
       </div>
       <div class="stat">
         <span class="stat-value" id="statFile">—</span>
@@ -70,28 +69,22 @@
       </div>
     </div>
 
-    <div class="terminal">
-      <div class="terminal-bar">
-        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-        <span class="terminal-title">extracted_text.txt</span>
-      </div>
-      <pre class="terminal-body" id="previewText"></pre>
-    </div>
+    <div class="image-grid" id="imageGrid" aria-label="Converted page images"></div>
 
     <div class="downloads">
-      <a id="downloadTxt" class="dl-card" download>
-        <span class="dl-kind">.TXT</span>
-        <span class="dl-name">Plain extracted text</span>
+      <a id="downloadImages" class="dl-card" download>
+        <span class="dl-kind">.ZIP</span>
+        <span class="dl-name">Download page images</span>
         <span class="dl-arrow">&#8594;</span>
       </a>
       <a id="downloadPdf" class="dl-card" download>
         <span class="dl-kind">.PDF</span>
-        <span class="dl-name">Scanned PDF (image-only)</span>
+        <span class="dl-name">Image-only PDF</span>
         <span class="dl-arrow">&#8594;</span>
       </a>
     </div>
 
-    <button class="reset-btn" id="resetBtn">Scan another document</button>
+    <button class="reset-btn" id="resetBtn">Convert another PDF</button>
   </section>
 
 </main>
