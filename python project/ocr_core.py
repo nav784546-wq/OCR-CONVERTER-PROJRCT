@@ -1,13 +1,16 @@
-"""Convert PDF pages to PNG images and an image-only PDF."""
+"""Convert PDF pages to images and create OCR text and searchable PDF outputs."""
 
+from io import BytesIO
 import os
 import platform
 import shutil
 import zipfile
 
 from pdf2image import convert_from_path
+from pypdf import PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
+import pytesseract
 
 WINDOWS_POPPLER_PATH = r"C:\poppler\Library\bin"
 COMMON_POPPLER_PATHS = [
@@ -89,8 +92,29 @@ def save_page_images(images, output_dir, base_name):
     return image_filenames, zip_path
 
 
+def build_ocr_outputs(images, output_dir, base_name):
+    """Create a searchable PDF and extracted text from rendered page images."""
+    pdf_path = os.path.join(output_dir, f"{base_name}_ocr.pdf")
+    text_path = os.path.join(output_dir, f"{base_name}_ocr.txt")
+    pdf_writer = PdfWriter()
+    page_text = []
+
+    for page_number, image in enumerate(images, start=1):
+        pdf_bytes = pytesseract.image_to_pdf_or_hocr(image, extension="pdf")
+        pdf_writer.append(BytesIO(pdf_bytes))
+        text = pytesseract.image_to_string(image).strip()
+        page_text.append(f"--- Page {page_number} ---\n{text}")
+
+    with open(pdf_path, "wb") as pdf_file:
+        pdf_writer.write(pdf_file)
+    with open(text_path, "w", encoding="utf-8") as text_file:
+        text_file.write("\n\n".join(page_text))
+
+    return pdf_path, text_path
+
+
 def convert(pdf_path, output_dir):
-    """Convert a PDF into per-page PNG images and an image-only PDF."""
+    """Convert a PDF into page images, an image-only PDF, and OCR outputs."""
     os.makedirs(output_dir, exist_ok=True)
     base_name = os.path.splitext(os.path.basename(pdf_path))[0]
     images = pdf_to_images(pdf_path)
@@ -98,7 +122,8 @@ def convert(pdf_path, output_dir):
         image_filenames, zip_path = save_page_images(images, output_dir, base_name)
         pdf_out_path = os.path.join(output_dir, f"{base_name}_scanned.pdf")
         build_scanned_pdf(images, pdf_out_path)
-        return image_filenames, zip_path, pdf_out_path, len(images)
+        ocr_pdf_path, text_path = build_ocr_outputs(images, output_dir, base_name)
+        return image_filenames, zip_path, pdf_out_path, ocr_pdf_path, text_path, len(images)
     finally:
         for image in images:
             image.close()

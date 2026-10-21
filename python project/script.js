@@ -12,11 +12,14 @@ const statFile = document.getElementById('statFile');
 const imageGrid = document.getElementById('imageGrid');
 const downloadImages = document.getElementById('downloadImages');
 const downloadPdf = document.getElementById('downloadPdf');
+const downloadOcrPdf = document.getElementById('downloadOcrPdf');
+const downloadText = document.getElementById('downloadText');
 
 const statusLines = [
   'Rendering PDF pages…',
+  'Recognizing text on each page…',
+  'Building searchable PDF…',
   'Saving page images…',
-  'Preparing image download…',
   'Almost done…',
 ];
 let statusInterval = null;
@@ -125,6 +128,8 @@ function showResults(data) {
 
   downloadImages.href = `/download/${data.job_id}/${encodeURIComponent(data.zip_filename)}`;
   downloadPdf.href = `/download/${data.job_id}/${encodeURIComponent(data.pdf_filename)}`;
+  downloadOcrPdf.href = `/download/${data.job_id}/${encodeURIComponent(data.ocr_pdf_filename)}`;
+  downloadText.href = `/download/${data.job_id}/${encodeURIComponent(data.text_filename)}`;
 
   results.classList.remove('hidden');
   results.scrollIntoView({ behavior: 'smooth', block: 'start' });

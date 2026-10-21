@@ -1,13 +1,15 @@
 # Local PDF-to-Image Converter
 
-A local Flask app that converts each page of a PDF into a high-resolution PNG.
-Preview the images in the browser, download them together as a ZIP, or download
-an image-only PDF.
+A local Flask app that uses Tesseract OCR to recognize PDF text, creates a
+searchable PDF and extracted text file, and converts each page into a
+high-resolution PNG. Download the searchable or unsearchable image-only PDF,
+extracted text, or page images.
 
 ## Requirements
 
 - Python 3.10 or newer
 - Poppler command-line tools (`pdfinfo` / `pdftoppm`)
+- Tesseract OCR
 
 The app auto-detects common Poppler install locations on Windows, macOS, and
 Linux. If Poppler is installed in a non-standard path, add it to your `PATH` or
@@ -18,10 +20,10 @@ update the explicit paths in `ocr_core.py`.
 ```bash
 # Ubuntu / Debian
 sudo apt-get update
-sudo apt-get install -y poppler-utils
+sudo apt-get install -y poppler-utils tesseract-ocr
 
 # macOS (Homebrew)
-brew install poppler
+brew install poppler tesseract
 ```
 
 ## Run locally
@@ -38,9 +40,11 @@ python -m pip install -r requirements.txt
 ### PostgreSQL setup
 
 The app stores the original PDF in the `uploaded_pdf` column and the generated
-image-only PDF in the `result_pdf` column of the `ocr_documents` table. Create a
-PostgreSQL database, then set `DATABASE_URL` before starting the app. The app
-creates the table automatically on the first successful conversion.
+image-only PDF in the `result_pdf` column of the `ocr_documents` table. The
+searchable OCR PDF and extracted text file are stored with the generated page
+images in the local results folder. Create a PostgreSQL database, then set
+`DATABASE_URL` before starting the app. The app creates the table automatically
+on the first successful conversion.
 
 ### Current Codespace
 

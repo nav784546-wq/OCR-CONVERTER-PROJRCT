@@ -34,9 +34,9 @@ def is_pdf(file):
 
 
 def get_database_url():
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = os.environ.get("postgresql://codespace@localhost:5432/ocr_converter")
     if not database_url:
-        raise RuntimeError("DATABASE_URL environment variable is not set.")
+        raise RuntimeError("postgresql://codespace@localhost:5432/ocr_converter environment variable is not set.")
     return database_url
 
 def save_document(job_id, source_filename, uploaded_pdf, result_pdf):
@@ -116,12 +116,19 @@ def convert():
     source_filename = get_display_name(file.filename)
 
     try:
-        image_filenames, zip_path, pdf_out_path, page_count = ocr_core.convert(
+        (
+            image_filenames,
+            zip_path,
+            pdf_out_path,
+            ocr_pdf_path,
+            text_path,
+            page_count,
+        ) = ocr_core.convert(
             pdf_path, job_result_dir
         )
     except Exception as e:
-        app.logger.exception("Could not convert PDF pages to images")
-        return jsonify({"error": f"Image conversion failed: {e}"}), 500
+        app.logger.exception("Could not convert or OCR the PDF")
+        return jsonify({"error": f"PDF conversion or OCR failed: {e}"}), 500
 
     try:
         with open(pdf_path, "rb") as uploaded_pdf_file:
@@ -149,6 +156,8 @@ def convert():
             "image_filenames": image_filenames,
             "zip_filename": os.path.basename(zip_path),
             "pdf_filename": os.path.basename(pdf_out_path),
+            "ocr_pdf_filename": os.path.basename(ocr_pdf_path),
+            "text_filename": os.path.basename(text_path),
             "source_filename": source_filename,
         }
     )

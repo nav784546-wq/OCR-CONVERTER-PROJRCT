@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PDF to Image Converter</title>
+<title>PDF OCR Converter</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -15,11 +15,11 @@
 <main class="page">
 
   <header class="hero">
-    <p class="eyebrow">PDF&nbsp;IMAGE&nbsp;CONVERTER&nbsp;/&nbsp;LOCAL</p>
-    <h1>Turn PDF pages into<br><span>clear images.</span></h1>
+    <p class="eyebrow">PDF&nbsp;OCR&nbsp;CONVERTER&nbsp;/&nbsp;LOCAL</p>
+    <h1>Turn PDF pages into<br><span>searchable text.</span></h1>
     <p class="subhead">
-      Drop in a PDF to convert every page into a high-resolution PNG.
-      Preview the images, download them together, or keep an image-only PDF.
+      Drop in a PDF to recognize its text and convert every page into a
+      high-resolution PNG. Download the searchable PDF, extracted text, or images.
     </p>
   </header>
 
@@ -47,7 +47,7 @@
         <div class="page-icon"></div>
         <div class="sweep-line"></div>
       </div>
-      <p class="scan-status" id="scanStatus">Converting PDF pages&hellip;</p>
+      <p class="scan-status" id="scanStatus">Recognizing text in PDF pages&hellip;</p>
     </div>
   </section>
 
@@ -79,7 +79,17 @@
       </a>
       <a id="downloadPdf" class="dl-card" download>
         <span class="dl-kind">.PDF</span>
-        <span class="dl-name">Image-only PDF</span>
+        <span class="dl-name">Unsearchable image-only PDF</span>
+        <span class="dl-arrow">&#8594;</span>
+      </a>
+      <a id="downloadOcrPdf" class="dl-card" download>
+        <span class="dl-kind">.PDF</span>
+        <span class="dl-name">Searchable OCR PDF</span>
+        <span class="dl-arrow">&#8594;</span>
+      </a>
+      <a id="downloadText" class="dl-card" download>
+        <span class="dl-kind">.TXT</span>
+        <span class="dl-name">Extracted text</span>
         <span class="dl-arrow">&#8594;</span>
       </a>
     </div>
