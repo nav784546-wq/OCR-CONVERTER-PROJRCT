@@ -1,12 +1,12 @@
 """Convert PDF pages to images and create OCR text and searchable PDF outputs."""
 
-from io import BytesIO
 import os
 import platform
 import shutil
+import tempfile
 import zipfile
 
-from pdf2image import convert_from_path
+from pdf2image import convert_from_path, pdfinfo_from_path
 from pypdf import PdfWriter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
@@ -57,73 +57,104 @@ def configure_poppler_path():
 configure_poppler_path()
 
 
-def pdf_to_images(pdf_path, dpi=300):
-    """Convert each PDF page into a high-res PIL image."""
+def pdf_to_images(pdf_path, dpi=300, first_page=None, last_page=None):
+    """Convert a selected range of PDF pages into high-res PIL images."""
     if shutil.which("pdftoppm") is None and POPPLER_PATH is None:
         raise RuntimeError(
             "Poppler utilities (pdftoppm/pdfinfo) were not found. "
             "Install Poppler or add its bin folder to PATH."
         )
-    return convert_from_path(pdf_path, dpi=dpi, poppler_path=POPPLER_PATH)
-
-
-def build_scanned_pdf(images, output_path):
-    """Create a PDF containing only the scanned page images, without OCR text."""
-    c = canvas.Canvas(output_path)
-    for img in images:
-        img_w, img_h = img.size
-        c.setPageSize((img_w, img_h))
-        c.drawImage(ImageReader(img), 0, 0, width=img_w, height=img_h)
-        c.showPage()
-    c.save()
-
-
-def save_page_images(images, output_dir, base_name):
-    """Save each rendered page as a PNG and package the images into a ZIP."""
-    image_filenames = []
-    zip_path = os.path.join(output_dir, f"{base_name}_images.zip")
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for page_number, image in enumerate(images, start=1):
-            filename = f"{base_name}_page_{page_number:03}.png"
-            image_path = os.path.join(output_dir, filename)
-            image.save(image_path, format="PNG")
-            archive.write(image_path, arcname=filename)
-            image_filenames.append(filename)
-    return image_filenames, zip_path
-
-
-def build_ocr_outputs(images, output_dir, base_name):
-    """Create a searchable PDF and extracted text from rendered page images."""
-    pdf_path = os.path.join(output_dir, f"{base_name}_ocr.pdf")
-    text_path = os.path.join(output_dir, f"{base_name}_ocr.txt")
-    pdf_writer = PdfWriter()
-    page_text = []
-
-    for page_number, image in enumerate(images, start=1):
-        pdf_bytes = pytesseract.image_to_pdf_or_hocr(image, extension="pdf")
-        pdf_writer.append(BytesIO(pdf_bytes))
-        text = pytesseract.image_to_string(image).strip()
-        page_text.append(f"--- Page {page_number} ---\n{text}")
-
-    with open(pdf_path, "wb") as pdf_file:
-        pdf_writer.write(pdf_file)
-    with open(text_path, "w", encoding="utf-8") as text_file:
-        text_file.write("\n\n".join(page_text))
-
-    return pdf_path, text_path
+    return convert_from_path(
+        pdf_path,
+        dpi=dpi,
+        first_page=first_page,
+        last_page=last_page,
+        poppler_path=POPPLER_PATH,
+    )
 
 
 def convert(pdf_path, output_dir):
-    """Convert a PDF into page images, an image-only PDF, and OCR outputs."""
+    """Convert a PDF page-by-page into images and OCR outputs."""
     os.makedirs(output_dir, exist_ok=True)
     base_name = os.path.splitext(os.path.basename(pdf_path))[0]
-    images = pdf_to_images(pdf_path)
+    page_count = pdfinfo_from_path(pdf_path, poppler_path=POPPLER_PATH)["Pages"]
+    image_filenames = []
+    zip_path = os.path.join(output_dir, f"{base_name}_images.zip")
+    pdf_out_path = os.path.join(output_dir, f"{base_name}_scanned.pdf")
+    ocr_pdf_path = os.path.join(output_dir, f"{base_name}_ocr.pdf")
+    text_path = os.path.join(output_dir, f"{base_name}_ocr.txt")
+    pdf_writer = PdfWriter()
+
     try:
-        image_filenames, zip_path = save_page_images(images, output_dir, base_name)
-        pdf_out_path = os.path.join(output_dir, f"{base_name}_scanned.pdf")
-        build_scanned_pdf(images, pdf_out_path)
-        ocr_pdf_path, text_path = build_ocr_outputs(images, output_dir, base_name)
-        return image_filenames, zip_path, pdf_out_path, ocr_pdf_path, text_path, len(images)
+        with tempfile.TemporaryDirectory(dir=output_dir) as temp_dir:
+            with (
+                zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive,
+                open(pdf_out_path, "wb") as scanned_pdf_file,
+                open(text_path, "w", encoding="utf-8") as text_file,
+            ):
+                scanned_pdf = canvas.Canvas(scanned_pdf_file)
+
+                for page_number in range(1, page_count + 1):
+                    images = pdf_to_images(
+                        pdf_path,
+                        first_page=page_number,
+                        last_page=page_number,
+                    )
+                    if len(images) != 1:
+                        for image in images:
+                            image.close()
+                        raise RuntimeError(
+                            f"Expected one rendered image for page {page_number}, "
+                            f"but got {len(images)}."
+                        )
+
+                    image = images[0]
+                    try:
+                        filename = f"{base_name}_page_{page_number:03}.png"
+                        image_path = os.path.join(output_dir, filename)
+                        image.save(image_path, format="PNG")
+                        archive.write(image_path, arcname=filename)
+                        image_filenames.append(filename)
+
+                        img_w, img_h = image.size
+                        scanned_pdf.setPageSize((img_w, img_h))
+                        scanned_pdf.drawImage(
+                            ImageReader(image), 0, 0, width=img_w, height=img_h
+                        )
+                        scanned_pdf.showPage()
+
+                        page_pdf_path = os.path.join(
+                            temp_dir, f"page_{page_number:06}.pdf"
+                        )
+                        with open(page_pdf_path, "wb") as page_pdf_file:
+                            page_pdf_file.write(
+                                pytesseract.image_to_pdf_or_hocr(
+                                    image, extension="pdf"
+                                )
+                            )
+                        pdf_writer.append(page_pdf_path)
+
+                        if page_number > 1:
+                            text_file.write("\n\n")
+                        text_file.write(
+                            f"--- Page {page_number} ---\n"
+                            f"{pytesseract.image_to_string(image).strip()}"
+                        )
+                    finally:
+                        image.close()
+
+                scanned_pdf.save()
+
+            with open(ocr_pdf_path, "wb") as ocr_pdf_file:
+                pdf_writer.write(ocr_pdf_file)
     finally:
-        for image in images:
-            image.close()
+        pdf_writer.close()
+
+    return (
+        image_filenames,
+        zip_path,
+        pdf_out_path,
+        ocr_pdf_path,
+        text_path,
+        page_count,
+    )

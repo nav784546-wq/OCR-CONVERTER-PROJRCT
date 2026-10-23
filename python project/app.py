@@ -34,9 +34,9 @@ def is_pdf(file):
 
 
 def get_database_url():
-    database_url = os.environ.get("postgresql://codespace@localhost:5432/ocr_converter")
+    database_url = os.environ.get("postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter")
     if not database_url:
-        raise RuntimeError("postgresql://codespace@localhost:5432/ocr_converter environment variable is not set.")
+        raise RuntimeError("postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter environment variable is not set.")
     return database_url
 
 def save_document(job_id, source_filename, uploaded_pdf, result_pdf):

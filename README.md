@@ -94,8 +94,25 @@ On Windows, use the equivalent `.venv\Scripts\python.exe` form instead.
 Then open <http://127.0.0.1:5000> in your browser. Keep the terminal open while
 using the app; press Ctrl+C there to stop the server.
 
-Uploads are limited to 25 MB. Uploaded PDFs and generated results are stored in
+Uploads are limited to 100 MB. PDFs are rendered one page at a time to reduce
+memory use for large documents. Uploaded PDFs and generated results are stored in
 the local `uploads/` and `results/` folders; those documents are excluded from
 Git.
 
 This development server is intended for local use, not for public deployment.
+
+after add the dockerfile to lost my project in online when i share the link of the ocr_converter:
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-10000} app:app"]
