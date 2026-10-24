@@ -1,0 +1,134 @@
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex a6d8ce6..1c7dd45 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -1,2 +1,3 @@[m
+ /python project/uploads/[m
+ /python project/results/[m
+[32m+[m[32m/python project/.venv/[m
+[1mdiff --git a/README.md b/README.md[m
+[1mindex 460012f..5bf4c7b 100644[m
+[1m--- a/README.md[m
+[1m+++ b/README.md[m
+[36m@@ -46,50 +46,55 @@[m [mimages in the local results folder. Create a PostgreSQL database, then set[m
+ `DATABASE_URL` before starting the app. The app creates the table automatically[m
+ on the first successful conversion.[m
+ [m
+[31m-### Current Codespace[m
+[32m+[m[32mWhen deploying online, attach a persistent PostgreSQL database to the app and[m[41m[m
+[32m+[m[32mset `DATABASE_URL` in the hosting provider's environment-variable settings.[m[41m[m
+[32m+[m[32mUse the connection URL supplied by that provider; do not put database[m[41m[m
+[32m+[m[32mcredentials in the source code. The container's local `uploads/` and `results/`[m[41m[m
+[32m+[m[32mfolders are not durable across redeploys, so files stored there may be lost.[m[41m[m
+[32m+[m[32mFor Docker-based deployment, set the service's root/build directory to[m[41m[m
+[32m+[m[32m`python project` so it uses that folder's `Dockerfile`, then rebuild and[m[41m[m
+[32m+[m[32mredeploy. The image installs Poppler (`poppler-utils`) and Tesseract, which are[m[41m[m
+[32m+[m[32mrequired for PDF conversion and OCR.[m[41m[m
+ [m
+[31m-PostgreSQL is installed locally in this Codespace. Run these commands to start[m
+[31m-PostgreSQL, create the database if needed, and launch the app:[m
+[32m+[m[32m### Run with local PostgreSQL in Codespaces[m[41m[m
+[32m+[m[41m[m
+[32m+[m[32mThe `service postgresql` and `createdb` errors mean PostgreSQL is not installed.[m[41m[m
+[32m+[m[32mInstall it and its client tools, then start the service:[m[41m[m
+ [m
+ ```bash[m
+[32m+[m[32msudo apt-get update[m[41m[m
+[32m+[m[32msudo apt-get install -y postgresql postgresql-client[m[41m[m
+[32m+[m[32msudo apt-get install -y poppler-utils tesseract-ocr[m[41m[m
+ sudo service postgresql start[m
+[31m-createdb ocr_converter   # skip if it already exists[m
+[31m-cd "/workspaces/OCR-CONVERTER-PROJRCT/python project"[m
+[31m-DATABASE_URL="postgresql://codespace@localhost:5432/ocr_converter" .venv/bin/python app.py[m
+ ```[m
+ [m
+[31m-Use these settings for the SQLTools connection:[m
+[31m-- Host: `localhost`[m
+[31m-- Port: `5432`[m
+[31m-- Database: `ocr_converter`[m
+[31m-- User: `codespace`[m
+[31m-- Password: leave blank[m
+[31m-[m
+[31m-Password-free access is restricted to this database and loopback connections[m
+[31m-for local development in this Codespace. Do not use this authentication setup[m
+[31m-for a public or production database.[m
+[32m+[m[32mIf `apt-get update` reports a missing signing key for an unrelated third-party[m[41m[m
+[32m+[m[32mrepository (such as Yarn), do not bypass signature verification; fix that[m[41m[m
+[32m+[m[32mrepository or use a hosted PostgreSQL database instead.[m[41m[m
+ [m
+[31m-For a local PostgreSQL instance, for example:[m
+[32m+[m[32mCreate a database role for your Codespace user and the app database. Run these[m[41m[m
+[32m+[m[32mcommands once; `sudo` may ask for your Codespace administrator password:[m[41m[m
+ [m
+ ```bash[m
+[31m-createdb ocr_converter[m
+[31m-export DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter"[m
+[32m+[m[32msudo -u postgres createuser --createdb "$(whoami)"[m[41m[m
+[32m+[m[32mcreatedb --owner="$(whoami)" ocr_converter[m[41m[m
+ ```[m
+ [m
+[31m-On PowerShell, set the connection string for the current terminal session with:[m
+[31m-[m
+[31m-```powershell[m
+[31m-$env:DATABASE_URL = "postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter"[m
+[31m-```[m
+[31m-[m
+[31m-Keep the connection string private and do not commit it to Git. After setting[m
+[31m-`DATABASE_URL`, start the app:[m
+[32m+[m[32mThe `.venv/bin/python` error means the project environment is missing or its[m[41m[m
+[32m+[m[32minterpreter link is stale. Recreate the virtual environment, reinstall its[m[41m[m
+[32m+[m[32mdependencies, and start the app:[m[41m[m
+ [m
+ ```bash[m
+[31m-python app.py[m
+[32m+[m[32mcd "/workspaces/OCR-CONVERTER-PROJRCT/python project"[m[41m[m
+[32m+[m[32mpython3 -m venv --clear .venv[m[41m[m
+[32m+[m[32m.venv/bin/python -m pip install -r requirements.txt[m[41m[m
+[32m+[m[32mDATABASE_URL="postgresql:///ocr_converter" .venv/bin/python app.py[m[41m[m
+ ```[m
+ [m
+[31m-On Windows, use the equivalent `.venv\Scripts\python.exe` form instead.[m
+[32m+[m[32mThis local connection uses Unix-socket peer authentication and does not need a[m[41m[m
+[32m+[m[32mpassword. If you cannot install PostgreSQL or use `sudo`, create a PostgreSQL[m[41m[m
+[32m+[m[32mdatabase with a hosting provider and set its connection URL as `DATABASE_URL`[m[41m[m
+[32m+[m[32min the host's environment-variable settings. Never commit database credentials.[m[41m[m
+ [m
+ Then open <http://127.0.0.1:5000> in your browser. Keep the terminal open while[m
+ using the app; press Ctrl+C there to stop the server.[m
+[1mdiff --git a/python project/app.py b/python project/app.py[m
+[1mindex 11664dd..1147fed 100644[m
+[1m--- a/python project/app.py[m	
+[1m+++ b/python project/app.py[m	
+[36m@@ -34,9 +34,9 @@[m [mdef is_pdf(file):[m
+ [m
+ [m
+ def get_database_url():[m
+[31m-    database_url = os.environ.get("postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter")[m
+[32m+[m[32m    database_url = os.environ.get("DATABASE_URL")[m
+     if not database_url:[m
+[31m-        raise RuntimeError("postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter environment variable is not set.")[m
+[32m+[m[32m        raise RuntimeError("DATABASE_URL environment variable is not set.")[m
+     return database_url[m
+ [m
+ def save_document(job_id, source_filename, uploaded_pdf, result_pdf):[m
+[1mdiff --git a/python project/dockerfile b/python project/dockerfile[m
+[1mdeleted file mode 100644[m
+[1mindex 4e31edb..0000000[m
+[1m--- a/python project/dockerfile[m	
+[1m+++ /dev/null[m
+[36m@@ -1,14 +0,0 @@[m
+[31m-FROM python:3.12-slim[m
+[31m-[m
+[31m-WORKDIR /app[m
+[31m-[m
+[31m-RUN apt-get update \[m
+[31m-    && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr \[m
+[31m-    && rm -rf /var/lib/apt/lists/*[m
+[31m-[m
+[31m-COPY requirements.txt .[m
+[31m-RUN pip install --no-cache-dir -r requirements.txt[m
+[31m-[m
+[31m-COPY . .[m
+[31m-[m
+[31m-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-10000} app:app"][m
+\ No newline at end of file[m
