@@ -46,6 +46,11 @@ images in the local results folder. Create a PostgreSQL database, then set
 `DATABASE_URL` before starting the app. The app creates the table automatically
 on the first successful conversion.
 
+For Docker deployment, configure the host's service root/build directory as
+`python project` so it finds `python project/Dockerfile`. The image installs
+Poppler and Tesseract, which are required for PDF conversion and OCR. Rebuild
+and redeploy after changing the Dockerfile.
+
 ### Current Codespace
 
 PostgreSQL is installed locally in this Codespace. Run these commands to start
@@ -73,13 +78,13 @@ For a local PostgreSQL instance, for example:
 
 ```bash
 createdb ocr_converter
-export DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter"
+export DATABASE_URL="postgresql://user:password@localhost:5432/ocr_converter"
 ```
 
 On PowerShell, set the connection string for the current terminal session with:
 
 ```powershell
-$env:DATABASE_URL = "postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter"
+$env:DATABASE_URL = "postgresql://user:password@localhost:5432/ocr_converter"
 ```
 
 Keep the connection string private and do not commit it to Git. After setting

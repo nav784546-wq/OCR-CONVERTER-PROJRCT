@@ -34,13 +34,17 @@ def is_pdf(file):
 
 
 def get_database_url():
-    database_url = os.environ.get("postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter")
-    if not database_url:
-        raise RuntimeError("postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/ocr_converter environment variable is not set.")
-    return database_url
+    return os.environ.get("DATABASE_URL")
 
 def save_document(job_id, source_filename, uploaded_pdf, result_pdf):
-    with psycopg.connect(get_database_url()) as connection:
+    database_url = get_database_url()
+    if not database_url:
+        app.logger.warning(
+            "DATABASE_URL is not set; saving PDF metadata only to the local results directory."
+        )
+        return
+
+    with psycopg.connect(database_url) as connection:
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS ocr_documents (
@@ -63,7 +67,11 @@ def save_document(job_id, source_filename, uploaded_pdf, result_pdf):
 
 
 def get_result_pdf(job_id):
-    with psycopg.connect(get_database_url()) as connection:
+    database_url = get_database_url()
+    if not database_url:
+        return None
+
+    with psycopg.connect(database_url) as connection:
         row = connection.execute(
             "SELECT result_pdf FROM ocr_documents WHERE id = %s",
             (job_id,),
@@ -79,6 +87,12 @@ def stylesheet():
 @app.route("/script.js")
 def javascript():
     return send_from_directory(BASE_DIR, "script.js")
+
+
+@app.route("/react.js")
+def react_javascript():
+    return send_from_directory(BASE_DIR, "react.js")
+
 
 @app.route("/")
 def index():
@@ -166,28 +180,41 @@ def convert():
 @app.route("/download/<job_id>/<filename>")
 def download(job_id, filename):
     if filename.endswith("_scanned.pdf"):
-        try:
-            result_pdf = get_result_pdf(job_id)
-        except RuntimeError as e:
-            return jsonify({"error": str(e)}), 500
-        except psycopg.Error:
-            app.logger.exception("Could not retrieve scanned PDF from PostgreSQL")
-            return jsonify(
-                {
-                    "error": (
-                        "Could not retrieve the scanned PDF from PostgreSQL. "
-                        "Check the database configuration and server log."
-                    )
-                }
-            ), 500
-        if result_pdf is None:
-            abort(404)
-        return send_file(
-            io.BytesIO(result_pdf),
-            mimetype="application/pdf",
-            as_attachment=True,
-            download_name=filename,
-        )
+        result_pdf = None
+        database_url = get_database_url()
+        if database_url:
+            try:
+                result_pdf = get_result_pdf(job_id)
+            except RuntimeError as e:
+                return jsonify({"error": str(e)}), 500
+            except psycopg.Error:
+                app.logger.exception("Could not retrieve scanned PDF from PostgreSQL")
+                return jsonify(
+                    {
+                        "error": (
+                            "Could not retrieve the scanned PDF from PostgreSQL. "
+                            "Check the database configuration and server log."
+                        )
+                    }
+                ), 500
+        if result_pdf is not None:
+            return send_file(
+                io.BytesIO(result_pdf),
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=filename,
+            )
+
+        job_result_dir = os.path.join(RESULTS_DIR, job_id)
+        scanned_pdf_path = os.path.join(job_result_dir, filename)
+        if os.path.exists(scanned_pdf_path):
+            return send_file(
+                scanned_pdf_path,
+                mimetype="application/pdf",
+                as_attachment=True,
+                download_name=filename,
+            )
+        abort(404)
 
     job_result_dir = os.path.join(RESULTS_DIR, job_id)
     return send_from_directory(job_result_dir, filename, as_attachment=True)
