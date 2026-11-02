@@ -37,6 +37,14 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
+To start the Streamlit interface locally, run:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The existing Flask interface can still be started with `python app.py`.
+
 ### PostgreSQL setup
 
 The app stores the original PDF in the `uploaded_pdf` column and the generated
@@ -50,6 +58,19 @@ For Docker deployment, configure the host's service root/build directory as
 `python project` so it finds `python project/Dockerfile`. The image installs
 Poppler and Tesseract, which are required for PDF conversion and OCR. Rebuild
 and redeploy after changing the Dockerfile.
+
+### Deploy on Streamlit Community Cloud
+
+This repository includes a Streamlit entry point alongside the Flask app.
+When deploying on Streamlit Community Cloud, select
+`python project/streamlit_app.py` as the app file. Its `requirements.txt`
+installs the Python dependencies; the root-level `packages.txt` installs
+Poppler and Tesseract. The Dockerfile is for Docker hosts and is not used by
+Streamlit Community Cloud.
+
+The Streamlit version provides downloads for the page-image ZIP, image-only
+PDF, searchable OCR PDF, and extracted text. Like other Streamlit Community
+Cloud apps, its temporary files are not permanent storage.
 
 ### Current Codespace
 
