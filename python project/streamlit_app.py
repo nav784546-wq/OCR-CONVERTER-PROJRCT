@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from pathlib import Path
 
 import streamlit as st
 from werkzeug.utils import secure_filename
@@ -11,7 +12,97 @@ import ocr_core
 
 MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
-st.set_page_config(page_title="PDF OCR Converter", page_icon="📄")
+st.set_page_config(
+    page_title="PDF OCR Converter",
+    page_icon="📄",
+    initial_sidebar_state="collapsed",
+)
+
+stylesheet = Path(__file__).with_name("style.css").read_text(encoding="utf-8")
+st.markdown(
+    f"""
+    <style>
+    {stylesheet}
+
+    .stApp {{
+        background-color: var(--bg);
+        background-image:
+            linear-gradient(var(--panel-line) 1px, transparent 1px),
+            linear-gradient(90deg, var(--panel-line) 1px, transparent 1px);
+        background-size: 48px 48px;
+        color: var(--text);
+        font-family: var(--font-sans);
+    }}
+
+    [data-testid="stHeader"] {{
+        background: transparent;
+    }}
+
+    [data-testid="stMain"] .block-container {{
+        max-width: 808px;
+        padding: 72px 24px 100px;
+    }}
+
+    [data-testid="stMain"] h1 {{
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: clamp(34px, 6vw, 52px);
+        line-height: 1.08;
+        margin-bottom: 20px;
+    }}
+
+    [data-testid="stMain"] p {{
+        color: var(--text-muted);
+        font-family: var(--font-sans);
+    }}
+
+    [data-testid="stFileUploader"] section {{
+        background: var(--panel);
+        border: 1px solid var(--panel-line);
+        border-radius: 4px;
+    }}
+
+    [data-testid="stFileUploader"] section:hover {{
+        border-color: var(--amber-dim);
+    }}
+
+    [data-testid="stFileUploader"] button,
+    [data-testid="stDownloadButton"] button {{
+        background: var(--panel);
+        border: 1px solid var(--amber-dim);
+        border-radius: 4px;
+        color: var(--amber);
+    }}
+
+    [data-testid="stFileUploader"] button:hover,
+    [data-testid="stDownloadButton"] button:hover {{
+        background: #1E2530;
+        border-color: var(--amber);
+        color: var(--text);
+    }}
+
+    [data-testid="stMain"] button[kind="primary"] {{
+        background: var(--amber);
+        border-color: var(--amber);
+        color: var(--bg);
+    }}
+
+    [data-testid="stMain"] button[kind="primary"]:hover {{
+        background: #ffc477;
+        border-color: #ffc477;
+        color: var(--bg);
+    }}
+
+    @media (max-width: 520px) {{
+        [data-testid="stMain"] .block-container {{
+            padding: 48px 18px 80px;
+        }}
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.title("PDF OCR Converter")
 st.write(
     "Upload a PDF to create a searchable OCR PDF, an image-only PDF, "
