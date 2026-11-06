@@ -43,7 +43,10 @@ To start the Streamlit interface locally, run:
 streamlit run streamlit_app.py
 ```
 
-The existing Flask interface can still be started with `python app.py`.
+To use the React web interface locally, start Flask from the `python project`
+folder with `python app.py`, then open <http://127.0.0.1:5000>. Keep the
+terminal running while using the page. Do not open `index.html` directly:
+the page needs the Flask server for PDF conversion.
 
 ### PostgreSQL setup
 

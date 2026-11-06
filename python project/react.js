@@ -82,7 +82,11 @@ function OCRApp() {
         setIsBusy(false);
       })
       .catch((err) => {
-        setErrorMsg(err.message);
+        const message =
+          err instanceof TypeError && err.message === 'Failed to fetch'
+            ? 'Cannot reach the OCR server. Start it with `python app.py` from the "python project" folder, then open http://127.0.0.1:5000. Do not open index.html directly, and keep the server running.'
+            : err.message;
+        setErrorMsg(message);
         setIsBusy(false);
       });
   }
