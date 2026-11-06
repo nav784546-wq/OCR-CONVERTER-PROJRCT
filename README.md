@@ -64,9 +64,10 @@ and redeploy after changing the Dockerfile.
 This repository includes a Streamlit entry point alongside the Flask app.
 When deploying on Streamlit Community Cloud, select
 `python project/streamlit_app.py` as the app file. Its `requirements.txt`
-installs the Python dependencies; the root-level `packages.txt` installs
-Poppler and Tesseract. The Dockerfile is for Docker hosts and is not used by
-Streamlit Community Cloud.
+installs the Streamlit and OCR dependencies; the root-level `packages.txt`
+installs Poppler and Tesseract. Flask-only dependencies are in
+`python project/flask-requirements.txt` and are installed by the Dockerfile,
+which Streamlit Community Cloud does not use.
 
 The Streamlit version provides downloads for the page-image ZIP, image-only
 PDF, searchable OCR PDF, and extracted text. Like other Streamlit Community
