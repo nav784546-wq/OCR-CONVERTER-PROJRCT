@@ -148,3 +148,17 @@ cd "/workspaces/OCR-CONVERTER-PROJRCT/python project"
 source .venv/bin/activate
 python -m pip install -r requirements.txt -r flask-requirements.txt
 python -m flask --app app run --host=0.0.0.0 --port=5000
+
+cd "/workspaces/OCR-CONVERTER-PROJRCT/python project"
+
+# Install Poppler and Tesseract if they aren't already installed (Ubuntu/Debian)
+sudo apt-get update
+sudo apt-get install -y poppler-utils tesseract-ocr
+
+# Create and activate a Python environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies and start the app
+python -m pip install -r requirements.txt
+streamlit run streamlit_app.py
