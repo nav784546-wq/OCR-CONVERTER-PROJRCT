@@ -143,3 +143,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-10000} app:app"]
+### to run the program
+cd "/workspaces/OCR-CONVERTER-PROJRCT/python project"
+source .venv/bin/activate
+python -m pip install -r requirements.txt -r flask-requirements.txt
+python -m flask --app app run --host=0.0.0.0 --port=5000
